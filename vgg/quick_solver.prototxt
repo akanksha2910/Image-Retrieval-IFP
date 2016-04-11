@@ -1,0 +1,15 @@
+net: "models/vgg/train_val.prototxt"
+test_iter: 4
+test_interval:50 
+test_initialization: false
+display: 5
+average_loss: 5
+base_lr: 0.0001
+lr_policy: "poly"
+power: 0.5
+max_iter: 180000
+momentum: 0.9
+weight_decay: 0.0002
+snapshot: 500
+snapshot_prefix: "models/vgg/finetune2016/a256_vgg_quick"
+solver_mode: GPU
