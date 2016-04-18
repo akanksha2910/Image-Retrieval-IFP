@@ -7,9 +7,9 @@ layer {
   top: 'im_info'
   top: 'label'
   python_param {
-    module: 'roi_data_layer.layer'
-    layer: 'RoIDataLayer'
-    param_str: "'num_classes': 21"
+    module: 'classification_data_layer.layer'
+    layer: 'ClassificationPythonLayer'
+    param_str: "\{'shuffle': True, 'source': '[IMAGE_LIST_PATH]'\}"
   }
 }
 
