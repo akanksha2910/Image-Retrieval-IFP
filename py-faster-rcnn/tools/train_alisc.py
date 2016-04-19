@@ -2,7 +2,7 @@
 """
 
 import os.path as osp
-ROOT_DIR = osp.abspath(osp.join(osp.dirname(__file__), '..', '..'))
+ROOT_DIR = osp.abspath(osp.join(osp.dirname(__file__), '..'))
 import sys
 sys.path.append(osp.join(ROOT_DIR, 'tools'))
 import _init_paths
