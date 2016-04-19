@@ -48,7 +48,7 @@ class BasePythonDataLayer(caffe.Layer):
     """
 
     def setup(self, bottom, top):
-        layer_params = yaml.load(self.param_str)
+        layer_params = yaml.load(self.param_str_)
         self._layer_params = layer_params
         # default batch_size = 256
         self._batch_size = int(layer_params.get('batch_size', 256))

@@ -9,7 +9,7 @@ layer {
   python_param {
     module: 'classification_data_layer.layer'
     layer: 'ClassificationPythonLayer'
-    param_str: "\{'shuffle': True, 'source': '[IMAGE_LIST_PATH]'\}"
+    param_str: "{\'compressed\': True, \'shuffle\': True, \'source\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train.txt\', \'root\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train\'}"
   }
 }
 
@@ -594,7 +594,7 @@ layer {
     decay_mult: 0
   }
   inner_product_param {
-    num_output: 21
+    num_output: 1000
     weight_filler {
       type: "gaussian"
       std: 0.01
