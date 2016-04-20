@@ -15,6 +15,8 @@ def main():
     parser = argparse.ArgumentParser("Traing ALISC Clasification Network")
     parser.add_argument('--network_type', help='VGG16 or ZF', required=True)
     parser.add_argument('--model', help="Pretrained Model, could be empty")
+    parser.add_argument('--gpu', help="GPU ID to use for training",
+                        default=1)
     c = vars(parser.parse_args())
 
     network_type = c['network_type']
@@ -28,6 +30,8 @@ def main():
         ROOT_DIR,
         'models', 'alisc', network_type, 'solver.pt')
 
+    caffe.set_mode_gpu()
+    caffe.set_device(int(c['gpu']))
     solver = caffe.SGDSolver(solver_fn)
 
     if c['model']:
