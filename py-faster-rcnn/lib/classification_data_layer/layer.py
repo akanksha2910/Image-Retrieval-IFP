@@ -66,7 +66,10 @@ class ClassificationPythonLayer(BasePythonDataLayer):
             datum, label = self.get_a_datum()
             data.append(datum)
             labels.append(label)
-            img_info.append(list(datum.shape))
+            img_info_ = [datum.shape[1], 
+                         datum.shape[2],
+                         datum.shape[0]]
+            img_info.append(img_info_)
         batch = [
             np.array(data),
             np.array(labels).reshape(self._batch_size, self._label_dim, 1, 1),

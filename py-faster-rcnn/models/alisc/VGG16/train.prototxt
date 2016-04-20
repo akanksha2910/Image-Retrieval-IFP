@@ -4,8 +4,8 @@ layer {
   name: 'input-data'
   type: 'Python'
   top: 'data'
-  top: 'im_info'
   top: 'label'
+  top: 'im_info'
   python_param {
     module: 'classification_data_layer.layer'
     layer: 'ClassificationPythonLayer'
