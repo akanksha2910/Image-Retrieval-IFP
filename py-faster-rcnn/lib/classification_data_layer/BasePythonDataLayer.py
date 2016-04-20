@@ -135,6 +135,7 @@ class BasePythonDataLayer(caffe.Layer):
     def forward(self, bottom, top):
         blob = self.get_next_minibatch()
         for i in range(len(blob)):
+            top[i].reshape(*(blob[i].shape))
             top[i].data[...] = blob[i].astype(np.float32, copy=False)
 
     def backward(self, top, propagate_down, bottom):
