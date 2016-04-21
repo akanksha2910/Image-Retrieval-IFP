@@ -108,6 +108,7 @@ class BasePythonDataLayer(caffe.Layer):
                     self._mean = np.array(caffe.io.blobproto_to_array(blob))[0]
             else:
                 self._mean = self._mean_file
+                self._mean = np.array(self._mean)
         else:
             self._mean = None
 
