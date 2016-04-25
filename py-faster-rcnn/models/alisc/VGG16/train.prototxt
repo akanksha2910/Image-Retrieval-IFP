@@ -489,28 +489,14 @@ layer {
 #========= Change for ALISC Classification ========
 
 layer {
-  name: "roi_reshape"
-  type: "Reshape"
-  bottom: "pool5"
-  top: "reshaped_pool5"
-  reshape_param {
-    shape {
-      dim: 1  # one image per training
-      dim: -1 # infer it from the other dimensions
-      dim: 7
-      dim: 7
-    }
-  }
-}
-layer {
-  name: "reshape_global_pooling"
-  type: "Pooling"
-  bottom: "reshaped_pool5"
-  top: "roi_global_pool"
-  pooling_param {
-    pool: AVE
-    stride: 1
-    global_pooling: true
+  name: 'BatchMaxPooling'
+  type: 'Python'
+  bottom: 'pool5'
+  top: 'batch_pool5'
+  python_param {
+    module: 'mil_layer.batch_pool_layer'
+    layer: 'BatchPoolLayer'
+    param_str: "'PoolMethod': 'MAX'"
   }
 }
 
@@ -519,7 +505,7 @@ layer {
 layer {
   name: "fc6"
   type: "InnerProduct"
-  bottom: "roi_global_pool"
+  bottom: "batch_pool5"
   top: "fc6"
   param {
     lr_mult: 1
