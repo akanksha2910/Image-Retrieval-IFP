@@ -21,6 +21,7 @@ class ClassificationPythonLayer(BasePythonDataLayer):
         super(ClassificationPythonLayer, self).setup(bottom, top)
         self._batch_size = 1
         self._multilabel = self._layer_params.get('multilabel', False)
+        self._img_scale = int(self._layer_params.get('scale', 2))
         if not self._multilabel:
             self._label_dim = 1
         else:
@@ -68,11 +69,11 @@ class ClassificationPythonLayer(BasePythonDataLayer):
             labels.append(label)
             img_info_ = [datum.shape[1], 
                          datum.shape[2],
-                         datum.shape[0]]
+                         self._img_scale]
             img_info.append(img_info_)
         batch = [
             np.array(data),
             np.array(labels).reshape(self._batch_size, self._label_dim, 1, 1),
-            np.array(img_info).reshape(self._batch_size, 3, 1, 1)
+            np.array(img_info).reshape(self._batch_size, 3)
         ]
         return batch
