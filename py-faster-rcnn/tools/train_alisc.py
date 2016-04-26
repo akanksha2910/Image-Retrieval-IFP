@@ -9,14 +9,17 @@ import _init_paths
 import caffe
 from fast_rcnn.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 import argparse
+import code
 
+
+DEBUG = True
 
 def main():
     parser = argparse.ArgumentParser("Traing ALISC Clasification Network")
     parser.add_argument('--network_type', help='VGG16 or ZF', required=True)
     parser.add_argument('--model', help="Pretrained Model, could be empty")
     parser.add_argument('--gpu', help="GPU ID to use for training",
-                        default=1)
+                        default=0)
     c = vars(parser.parse_args())
 
     network_type = c['network_type']
@@ -47,6 +50,8 @@ def main():
     print("Loading pretrained model from {}".format(weights_fn))
     solver.net.copy_from(weights_fn)
 
+    if DEBUG:
+        code.interact(local=locals())
     print('Start Solving...')
     solver.solve()
 

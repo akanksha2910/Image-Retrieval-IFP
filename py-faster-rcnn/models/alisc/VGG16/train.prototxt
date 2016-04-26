@@ -9,7 +9,7 @@ layer {
   python_param {
     module: 'classification_data_layer.layer'
     layer: 'ClassificationPythonLayer'
-    param_str: "{\'compressed\': True, \'shuffle\': True, \'source\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train.txt\', \'root\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train\'}"
+    param_str: "{\'compressed\': True, \'shuffle\': True, \'source\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train_short.txt\', \'root\': \'/mnt/sdb/xliu102/data/ImageNet/2012/train\'}"
   }
 }
 
@@ -567,7 +567,7 @@ layer {
   }
 }
 layer {
-  name: "cls_score"
+  name: "cls_score_alisc"
   type: "InnerProduct"
   bottom: "fc7"
   top: "cls_score"
