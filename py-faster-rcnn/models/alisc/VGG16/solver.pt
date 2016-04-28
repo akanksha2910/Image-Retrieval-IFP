@@ -1,4 +1,8 @@
 train_net: "models/alisc/VGG16/train.prototxt"
+test_net: "models/alisc/VGG16/val.prototxt"
+test_iter: 1000
+test_interval: 500
+test_initialization: false
 base_lr: 0.001
 lr_policy: "step"
 gamma: 0.1
