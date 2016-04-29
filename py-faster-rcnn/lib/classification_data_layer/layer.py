@@ -21,7 +21,7 @@ class ClassificationPythonLayer(BasePythonDataLayer):
         super(ClassificationPythonLayer, self).setup(bottom, top)
         self._batch_size = 1
         self._multilabel = self._layer_params.get('multilabel', False)
-        self._img_scale = int(self._layer_params.get('scale', 2))
+        self._img_scale = int(self._layer_params.get('scale', 1))
         if not self._multilabel:
             self._label_dim = 1
         else:
