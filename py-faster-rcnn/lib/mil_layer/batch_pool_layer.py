@@ -65,7 +65,7 @@ class BatchPoolLayer(caffe.Layer):
                 raise
         if self._pooling == 'AVE':
             # For average pooling, just pass down the top gradient
-            bottom_diff_ = top_diff_[np.newaxis, :] / num_
+            bottom_diff_ = np.tile(top_diff_.flatten(), num_) / num_
         bottom[0].diff[...] += bottom_diff_.reshape(bottom[0].diff.shape)
 
     def reshape(self, bottom, top):

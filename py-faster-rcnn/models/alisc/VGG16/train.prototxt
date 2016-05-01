@@ -486,26 +486,12 @@ layer {
   }
 }
 
-#========= Change for ALISC Classification ========
-
-layer {
-  name: 'BatchMaxPooling'
-  type: 'Python'
-  bottom: 'pool5'
-  top: 'batch_pool5'
-  python_param {
-    module: 'mil_layer.batch_pool_layer'
-    layer: 'BatchPoolLayer'
-    param_str: "'PoolMethod': 'MAX'"
-  }
-}
-
 #======== Classification Network =========
 
 layer {
   name: "fc6"
   type: "InnerProduct"
-  bottom: "batch_pool5"
+  bottom: "pool5"
   top: "fc6"
   param {
     lr_mult: 1
@@ -591,10 +577,22 @@ layer {
     }
   }
 }
+#========= Change for ALISC Classification ========
+layer {
+  name: 'BatchMaxPooling'
+  type: 'Python'
+  bottom: 'cls_score'
+  top: 'batch_pooled_cls_score'
+  python_param {
+    module: 'mil_layer.batch_pool_layer'
+    layer: 'BatchPoolLayer'
+    param_str: "'PoolMethod': 'AVE'"
+  }
+}
 layer {
   name: "cls_loss"
   type: "SoftmaxWithLoss"
-  bottom: "cls_score"
+  bottom: "batch_pooled_cls_score"
   bottom: "label"
   top: "cls_loss"
 }
