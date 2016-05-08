@@ -42,7 +42,7 @@ class BatchPoolLayer(caffe.Layer):
         bottom_data_ = bottom[0].data.reshape(num_, -1)
         # pooling mask is of the same size as input
         # then backward could be calculated as matrix multiplication
-        self._pooling_mask = np.zeors(bottom[0].data.shape)
+        self._pooling_mask = np.zeros(bottom[0].data.shape)
         # max pooling
         if self._pooling == 'MAX':
             # perform max pooling
@@ -52,33 +52,38 @@ class BatchPoolLayer(caffe.Layer):
             # set the pooling_mask
             for i in range(len(self._max_ids)):
                 self._pooling_mask[self._max_ids[i], i] = 1.0
-        if self._pooling == 'AVE':
+        elif self._pooling == 'AVE':
             # perform average pooling
             pooled_data_ = np.mean(bottom_data_, axis=0)
             self._pooling_mask = np.ones(self._pooling_mask.shape)
             self._pooling_mask *= (1.0 / float(num_))
-        if self._pooling == 'MED':
-            # using Media pooling, which is used to eliminate outlier points
+        elif self._pooling == 'MED':
+            # using Median pooling, which is used to eliminate outlier points
             pooled_data_ = np.median(bottom_data_, axis=0)
-            self._median_ids = np.where(bottom_data_ == pooled_datat)[0]
+            self._median_ids = np.where(bottom_data_ == pooled_data_)[0]
             # set the pooling_mask
             for i in range(len(self._median_ids)):
                 self._pooling_mask[self._median_ids[i], i] = 1.0
-        if self._pooling == 'GAUSSIAN':
+        elif self._pooling == 'GAUSSIAN':
             # Fit a gaussian distribution
             bottom_mean_ = np.mean(bottom_data_, axis=0)
-            bottom_var_ = np.cov(bottom_data_)
+            bottom_var_ = np.cov(bottom_data_.transpose())
             self._gaussian_weights = multivariate_normal.pdf(
-                bottom_data_, bottom_mean_, bottom_var_)
-            self._pooling_mask = np.ones(self._pooling_mask)
+                bottom_data_, bottom_mean_, bottom_var_, allow_singular=True)
+            self._gaussian_weights /= self._gaussian_weights.sum()
+            self._pooling_mask = np.ones(self._pooling_mask.shape)
+            pooled_data_ = bottom_data_ * self._gaussian_weights[:, np.newaxis]
+            pooled_data_ = pooled_data_.sum(axis=0)
             for i in range(len(self._gaussian_weights)):
                 self._pooling_mask[i, ...] *= self._gaussian_weights[i]
+        else:
+            print("WRONG POOLING TYPE")
+            pooled_data_ = np.zeros((1, bottom_data_.shape[1]))
         top[0].data[0, ...] = pooled_data_.reshape(bottom[0].data.shape[1:])
 
     def backward(self, top, propagate_down, bottom):
         """Calculate backward gradients
         """
-        num_ = bottom[0].data.shape[0]
         top_diff_ = top[0].diff.flatten()
         bottom_diff_ = top_diff_ * self._pooling_mask
         bottom[0].diff[...] += bottom_diff_.reshape(bottom[0].diff.shape)
