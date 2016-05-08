@@ -15,6 +15,8 @@ Copyright @ Xianming Liu, University of Illinois, Urbana-Champaign
 import caffe
 import numpy as np
 import yaml
+from scipy.stats import multivariate_normal
+
 
 __author__ = ['Xianming Liu (liuxianming@gmail.com)']
 
@@ -30,21 +32,47 @@ class BatchPoolLayer(caffe.Layer):
         # pooling method, by default is "MAX"
         self._pooling = layer_params.get('PoolMethod', 'MAX')
         self._max_ids = None
+        # use _pooling_mask storing the weight matrix
+        self._pooling_mask = None
 
     def forward(self, bottom, top):
         """Forward: either using max pooling or average pooling
         """
         num_ = bottom[0].data.shape[0]
         bottom_data_ = bottom[0].data.reshape(num_, -1)
+        # pooling mask is of the same size as input
+        # then backward could be calculated as matrix multiplication
+        self._pooling_mask = np.zeors(bottom[0].data.shape)
         # max pooling
         if self._pooling == 'MAX':
             # perform max pooling
             pooled_data_ = np.max(bottom_data_, axis=0)
             self._max_ids = np.argmax(bottom_data_, axis=0).reshape(
                 bottom[0].shape[1:])
+            # set the pooling_mask
+            for i in range(len(self._max_ids)):
+                self._pooling_mask[self._max_ids[i], i] = 1.0
         if self._pooling == 'AVE':
             # perform average pooling
             pooled_data_ = np.mean(bottom_data_, axis=0)
+            self._pooling_mask = np.ones(self._pooling_mask.shape)
+            self._pooling_mask *= (1.0 / float(num_))
+        if self._pooling == 'MED':
+            # using Media pooling, which is used to eliminate outlier points
+            pooled_data_ = np.median(bottom_data_, axis=0)
+            self._median_ids = np.where(bottom_data_ == pooled_datat)[0]
+            # set the pooling_mask
+            for i in range(len(self._median_ids)):
+                self._pooling_mask[self._median_ids[i], i] = 1.0
+        if self._pooling == 'GAUSSIAN':
+            # Fit a gaussian distribution
+            bottom_mean_ = np.mean(bottom_data_, axis=0)
+            bottom_var_ = np.cov(bottom_data_)
+            self._gaussian_weights = multivariate_normal.pdf(
+                bottom_data_, bottom_mean_, bottom_var_)
+            self._pooling_mask = np.ones(self._pooling_mask)
+            for i in range(len(self._gaussian_weights)):
+                self._pooling_mask[i, ...] *= self._gaussian_weights[i]
         top[0].data[0, ...] = pooled_data_.reshape(bottom[0].data.shape[1:])
 
     def backward(self, top, propagate_down, bottom):
@@ -52,20 +80,7 @@ class BatchPoolLayer(caffe.Layer):
         """
         num_ = bottom[0].data.shape[0]
         top_diff_ = top[0].diff.flatten()
-        if self._pooling == 'MAX':
-            if self._max_ids is not None:
-                mask_ = self._max_ids.flatten()
-                bottom_diff_ = np.zeros(bottom[0].diff.shape)
-                bottom_diff_ = bottom_diff_.reshape(num_, -1)
-                for i in range(len(top_diff_)):
-                    pos = mask_[i]
-                    bottom_diff_[pos, i] = top_diff_[i]
-            else:
-                print("Max pooling mask is empty")
-                raise
-        if self._pooling == 'AVE':
-            # For average pooling, just pass down the top gradient
-            bottom_diff_ = np.tile(top_diff_.flatten(), num_) / num_
+        bottom_diff_ = top_diff_ * self._pooling_mask
         bottom[0].diff[...] += bottom_diff_.reshape(bottom[0].diff.shape)
 
     def reshape(self, bottom, top):
