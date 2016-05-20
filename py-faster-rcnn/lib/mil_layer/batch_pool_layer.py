@@ -28,9 +28,9 @@ class BatchPoolLayer(caffe.Layer):
     This layer is utilized in MIL
     """
     def setup(self, bottom, top):
-        layer_params = yaml.load(self.param_str_)
+        self._layer_params = yaml.load(self.param_str_)
         # pooling method, by default is "MAX"
-        self._pooling = layer_params.get('PoolMethod', 'MAX')
+        self._pooling = self._layer_params.get('PoolMethod', 'MAX')
         self._max_ids = None
         # use _pooling_mask storing the weight matrix
         self._pooling_mask = None
@@ -66,10 +66,12 @@ class BatchPoolLayer(caffe.Layer):
                 self._pooling_mask[self._median_ids[i], i] = 1.0
         elif self._pooling == 'GAUSSIAN':
             # Fit a gaussian distribution
+            sigma_clip = 0.34
             bottom_mean_ = np.mean(bottom_data_, axis=0)
             bottom_var_ = np.cov(bottom_data_.transpose())
             self._gaussian_weights = multivariate_normal.pdf(
                 bottom_data_, bottom_mean_, bottom_var_, allow_singular=True)
+            self._gaussian_weights = (self._gaussian_weights - sigma_clip).clip(0) + sigma_clip
             self._gaussian_weights /= self._gaussian_weights.sum()
             self._pooling_mask = np.ones(self._pooling_mask.shape)
             pooled_data_ = bottom_data_ * self._gaussian_weights[:, np.newaxis]
