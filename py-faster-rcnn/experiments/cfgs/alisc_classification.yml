@@ -1,8 +1,8 @@
 TRAIN:
   HAS_RPN: True
   IMS_PER_BATCH: 1 # not sure if this could be changed
-  RPN_BATCHSIZE: 32
-  RPN_POST_NMS_TOP_N: 32
+  RPN_BATCHSIZE: 128
+  RPN_POST_NMS_TOP_N: 128 
   RPN_MIN_SIZE: 12
 TEST:
   HAS_RPN: True

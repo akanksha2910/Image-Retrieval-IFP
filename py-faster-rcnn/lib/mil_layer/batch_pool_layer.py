@@ -16,9 +16,13 @@ import caffe
 import numpy as np
 import yaml
 from scipy.stats import multivariate_normal
+from scipy.stats.mstats import trimboth
 
 
 __author__ = ['Xianming Liu (liuxianming@gmail.com)']
+
+
+DEBUG = False
 
 
 class BatchPoolLayer(caffe.Layer):
@@ -39,6 +43,8 @@ class BatchPoolLayer(caffe.Layer):
         """Forward: either using max pooling or average pooling
         """
         num_ = bottom[0].data.shape[0]
+        if DEBUG:
+            print("Number of samples input: {}".format(num_))
         bottom_data_ = bottom[0].data.reshape(num_, -1)
         # pooling mask is of the same size as input
         # then backward could be calculated as matrix multiplication
@@ -54,24 +60,44 @@ class BatchPoolLayer(caffe.Layer):
                 self._pooling_mask[self._max_ids[i], i] = 1.0
         elif self._pooling == 'AVE':
             # perform average pooling
-            pooled_data_ = np.mean(bottom_data_, axis=0)
-            self._pooling_mask = np.ones(self._pooling_mask.shape)
-            self._pooling_mask *= (1.0 / float(num_))
-        elif self._pooling == 'MED':
-            # using Median pooling, which is used to eliminate outlier points
-            pooled_data_ = np.median(bottom_data_, axis=0)
-            self._median_ids = np.where(bottom_data_ == pooled_data_)[0]
-            # set the pooling_mask
-            for i in range(len(self._median_ids)):
-                self._pooling_mask[self._median_ids[i], i] = 1.0
+            trim_ = float(self._layer_params.get('trim', 0.0))
+            if trim_ == 0.0:
+                pooled_data_ = np.mean(bottom_data_, axis=0)
+                self._pooling_mask = np.ones(self._pooling_mask.shape)
+                self._pooling_mask *= (1.0 / float(num_))
+            else:
+                # trimmed mean, with percentage of trim_
+                trimmed_data_ = trimboth(
+                    bottom_data_, proportiontocut=trim_, axis=0)
+                pooled_data_ = trimmed_data_.mean(axis=0)
+                trimmed_count_ \
+                    = trimmed_data_.mask.astype(np.float32)[:, 1].sum()
+                self._pooling_mask \
+                    = (1 - trimmed_data_.mask).astype(np.float32)
+                if DEBUG:
+                    print self._pooling_mask
+                self._pooling_mask /= trimmed_count_
         elif self._pooling == 'GAUSSIAN':
             # Fit a gaussian distribution
-            sigma_clip = 0.34
+            sigma_clip = 0.05
             bottom_mean_ = np.mean(bottom_data_, axis=0)
             bottom_var_ = np.cov(bottom_data_.transpose())
             self._gaussian_weights = multivariate_normal.pdf(
                 bottom_data_, bottom_mean_, bottom_var_, allow_singular=True)
-            self._gaussian_weights = (self._gaussian_weights - sigma_clip).clip(0) + sigma_clip
+            if DEBUG:
+                print("Before clipping: {}".format(
+                    (self._gaussian_weights > 0).sum()))
+                # print(self._gaussian_weights)
+            # clip samples far away from the mean
+            self._gaussian_weights /= self._gaussian_weights.max()
+            if DEBUG:
+                print self._gaussian_weights
+            self._gaussian_weights[
+                np.where(self._gaussian_weights < sigma_clip)] = 0
+            if DEBUG:
+                print('Number of bbox activated: {}'.format(
+                    (self._gaussian_weights > 0).sum()))
+                # print(self._gaussian_weights)
             self._gaussian_weights /= self._gaussian_weights.sum()
             self._pooling_mask = np.ones(self._pooling_mask.shape)
             pooled_data_ = bottom_data_ * self._gaussian_weights[:, np.newaxis]
@@ -81,6 +107,8 @@ class BatchPoolLayer(caffe.Layer):
         else:
             print("WRONG POOLING TYPE")
             pooled_data_ = np.zeros((1, bottom_data_.shape[1]))
+        if DEBUG:
+            print('Pooling Mask: {}'.format(self._pooling_mask))
         top[0].data[0, ...] = pooled_data_.reshape(bottom[0].data.shape[1:])
 
     def backward(self, top, propagate_down, bottom):

@@ -3,18 +3,21 @@ train_net: "models/alisc/VGG16/train.prototxt"
 # test_iter: 1000
 # test_interval: 500
 # test_initialization: false
-base_lr: 0.0001
+base_lr: 0.001
 lr_policy: "step"
-gamma: 0.1
+gamma: 0.96
 stepsize: 1000000
 max_iter: 2000000
-display: 1
+display: 10 
 average_loss: 100
 # iter_size: 1
 momentum: 0.9
-weight_decay: 0.0005
+# type: "Adam"
+# weight_decay: 0.0005
 # We disable standard caffe solver snapshotting and implement our own snapshot
 # function
 # snapshot: 0
 # We still use the snapshot prefix, though
 snapshot_prefix: "vgg16_fast_rcnn"
+# debug_info: true
+# clip_gradients: 100
